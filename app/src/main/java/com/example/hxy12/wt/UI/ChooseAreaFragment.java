@@ -111,6 +111,7 @@ public class ChooseAreaFragment extends Fragment {
                     queryCounties();
                 } else if (currentLevel == LEVEL_COUNTY) {
                     String weatherId = countyList.get(position).getWeatherId();
+                    Toast.makeText(getActivity(),weatherId,Toast.LENGTH_SHORT).show();
 //                    if (getActivity() instanceof MainActivity) {
 //                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
 //                        intent.putExtra("weather_id", weatherId);
@@ -142,21 +143,21 @@ public class ChooseAreaFragment extends Fragment {
      * 查询全国所有的省，优先从数据库查询，如果没有查询到再去服务器上查询。
      */
     private void queryProvinces() {
-        titleText.setText("中国");
+        titleText.setText("选择地区");
         backButton.setVisibility(View.GONE);
         provinceList = DataSupport.findAll(Province.class);
         if (provinceList.size() > 0) {
-            dataList.clear();
+            dataList.clear();//清除原表数据
             for (Province province : provinceList) {
                 dataList.add(province.getProvinceName());
             }
-            adapter.notifyDataSetChanged();
-            listView.setSelection(0);
-            currentLevel = LEVEL_PROVINCE;
+            adapter.notifyDataSetChanged();//刷新listview
+            listView.setSelection(0);//设置当前listview滚动的位置
+            currentLevel = LEVEL_PROVINCE;//当前页面状态
         } else {
             String address = "http://guolin.tech/api/china";
             queryFromServer(address, "province");
-            Log.v("connect province", "queryProvinces: ");
+            //Log.v("connect province", "queryProvinces: ");
         }
     }
 
@@ -177,7 +178,7 @@ public class ChooseAreaFragment extends Fragment {
             currentLevel = LEVEL_CITY;
         } else {
             int provinceCode = selectedProvince.getProvinceCode();
-            String address = "http://guolin.tech/api/china/" + provinceCode;
+            String address = "http://guolin.tech/api/china"+"/"+provinceCode ;
             queryFromServer(address, "city");
         }
     }
@@ -200,7 +201,7 @@ public class ChooseAreaFragment extends Fragment {
         } else {
             int provinceCode = selectedProvince.getProvinceCode();
             int cityCode = selectedCity.getCityCode();
-            String address = "http://guolin.tech/api/china/" + provinceCode + "/" + cityCode;
+            String address = "http://guolin.tech/api/china"+"/"+provinceCode+"/"+cityCode ;
             queryFromServer(address, "county");
         }
     }
@@ -211,10 +212,12 @@ public class ChooseAreaFragment extends Fragment {
     private void queryFromServer(String address, final String type) {
         showProgressDialog();
         HttpUtil.sendOkHttpRequest(address, new Callback() {
+            /*用HttpUtil的方法发送请求的数据回调到onResponse中处理*/
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                String responseText = response.body().string();
+                    String responseText = response.body().string();
                     boolean result = false;
+                /*用Utility中的方法处理数据，并存储到数据库中*/
                 if ("province".equals(type)) {
                     result = Utility.handleProvinceResponse(responseText);
                 } else if ("city".equals(type)) {
@@ -241,7 +244,7 @@ public class ChooseAreaFragment extends Fragment {
 
             @Override
             public void onFailure(Call call, IOException e) {
-                // 通过runOnUiThread()方法回到主线程处理逻辑
+                // 通过runOnUiThread()方法回到主线程处理逻辑，从子线程切换回主线程
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
